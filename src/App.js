@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
-import { ThemeProvider } from "@emotion/react";
+import { ThemeProvider } from '@emotion/react';
+import dayjs from 'dayjs';
 
+import { ReactComponent as LoadingIcon } from './images/loading.svg';
 import { ReactComponent as DayCloudyIcon } from './images/day-cloudy.svg';
 import { ReactComponent as AirFlowIcon } from './images/airFlow.svg';
 import { ReactComponent as RainIcon } from './images/rain.svg';
 import { ReactComponent as RefreshIcon } from './images/refresh.svg';
-
 
 const theme = {
   light: {
@@ -120,37 +121,116 @@ const Refresh = styled.div`
     width: 15px;
     height: 15px;
     cursor: pointer;
+    animation: rotate infinite 1.5s linear;
+    animation-duration: ${({ isLoading }) => (isLoading ? '1.5s' : '0s')};
+  }
+
+  @keyframes rotate {
+    from {
+      transform: rotate(360deg);
+    }
+    to {
+      transform: rotate(0deg);
+    }
   }
 `;
 
-function App() {
+
+const AUTHORIZATION_KEY = 'CWB-28D990D2-141C-485E-9860-048D8C87B689';
+const LOCATION_NAME = '臺北';
+const App = () => {
+  console.log('invoke function component');
   const [currentTheme, setCurrentTheme] = useState('light');
+  const [currentWeather, setCurrentWeather] = useState({
+    observationTime: '2020-12-12 22:10:00',
+    locationName: '臺北市',
+    description: '多雲時晴',
+    windSpeed: 3.6,
+    temperature: 32.1,
+    rainPossibility: 60,
+    isLoading: true,
+  });
+
+  const {
+    observationTime,
+    locationName,
+    description,
+    windSpeed,
+    temperature,
+    rainPossibility,
+    isLoading,
+  } = currentWeather;
+
+  const fetchCurrentWeather = () => {
+    setCurrentWeather((prevState) => ({
+      ...prevState,
+      isLoading: true,
+    }));
+
+    fetch(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=${AUTHORIZATION_KEY}&locationName=${LOCATION_NAME}`)
+      .then((response) => response.json())
+      .then((data) => {
+        console.log('data', data);
+        const locationData = data.records.location[0];
+        const weatherElements = locationData.weatherElement.reduce(
+          (neededElements, item) => {
+            if (['WDSD', 'TEMP'].includes(item.elementName)) {
+              neededElements[item.elementName] = item.elementValue;
+            }
+            return neededElements;
+          },
+          {}
+        );
+        setCurrentWeather({
+          observationTime: locationData.time.obsTime,
+          locationName: locationData.locationName,
+          temperature: weatherElements.TEMP,
+          windSpeed: weatherElements.WDSD,
+          description: '多雲時晴',
+          rainPossibility: 50,
+          isLoading: false,
+        });
+      });
+  };
+
+
+  useEffect(() => {
+    // useEffect 中 console.log
+    console.log('execute function in useEffect');
+    fetchCurrentWeather();
+  }, []);
 
   return (
     <ThemeProvider theme={theme[currentTheme]}>
       <Container>
+        {console.log('render, isLoading: ', isLoading)}
         <WeatherCard>
-          <Location>台北市</Location>
-          <Description>多雲時晴</Description>
+          <Location>{locationName}</Location>
+          <Description>{description}</Description>
           <CurrentWeather>
             <Temperature>
-              23 <Celsius>°C</Celsius>
+              {Math.round(temperature)} <Celsius>°C</Celsius>
             </Temperature>
             <DayCloudy />
           </CurrentWeather>
           <AirFlow>
-            <AirFlowIcon /> 23 m/h
+            <AirFlowIcon /> {windSpeed} m/h
           </AirFlow>
           <Rain>
-            <RainIcon /> 48%
+            <RainIcon /> {rainPossibility}%
           </Rain>
-          <Refresh>
-            最後觀測時間：上午 12:03 <RefreshIcon />
+          <Refresh onClick={fetchCurrentWeather} isLoading={isLoading}>
+            最後觀測時間：
+            {new Intl.DateTimeFormat('zh-TW', {
+              hour: 'numeric',
+              minute: 'numeric',
+            }).format(dayjs(observationTime))}{' '}
+            {isLoading ? <LoadingIcon /> : <RefreshIcon />}
           </Refresh>
         </WeatherCard>
       </Container>
     </ThemeProvider>
   );
-}
+};
 
 export default App;
