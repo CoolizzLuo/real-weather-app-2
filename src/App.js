@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import styled from '@emotion/styled';
 import { ThemeProvider } from '@emotion/react';
 import dayjs from 'dayjs';
 import WeatherIcon from './components/WeatherIcon';
+import { getMoment } from './utils/helpers';
 
 import { ReactComponent as LoadingIcon } from './images/loading.svg';
 import { ReactComponent as AirFlowIcon } from './images/airFlow.svg';
@@ -203,6 +204,7 @@ const App = () => {
     comfortability: '',
     isLoading: true,
   });
+  const moment = useMemo(() => getMoment(LOCATION_NAME_FORECAST), []);
 
   const fetchData = useCallback(async () => {
     setWeatherElement((prevState) => ({
@@ -221,6 +223,10 @@ const App = () => {
       isLoading: false,
     });
   }, []);
+
+  useEffect(() => {
+    setCurrentTheme(moment === 'day' ? 'light' : 'dark');
+  }, [moment]);
 
   useEffect(() => {
     fetchData();
@@ -251,7 +257,7 @@ const App = () => {
             <Temperature>
               {Math.round(temperature)} <Celsius>°C</Celsius>
             </Temperature>
-            <WeatherIcon weatherCode={weatherCode} moment="night" />
+            <WeatherIcon weatherCode={weatherCode} moment={moment} />
           </CurrentWeather>
           <AirFlow>
             <AirFlowIcon /> {windSpeed} m/h
