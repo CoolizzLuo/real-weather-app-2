@@ -50,6 +50,9 @@ const App = () => {
     authorizationKey: AUTHORIZATION_KEY,
   });
   const [currentPage, setCurrentPage] = useState('WeatherCard');
+  const handleCurrentPageChange = (currentPage) => {
+    setCurrentPage(currentPage);
+  };
 
   useEffect(() => {
     setCurrentTheme(moment === 'day' ? 'light' : 'dark');
@@ -66,12 +69,13 @@ const App = () => {
               weatherElement={weatherElement}
               moment={moment}
               fetchData={fetchData}
+              handleCurrentPageChange={handleCurrentPageChange}
             />
           )
         }
 
         {
-          currentPage === 'WeatherSetting' && <WeatherSetting />
+          currentPage === 'WeatherSetting' && <WeatherSetting handleCurrentPageChange={handleCurrentPageChange} />
         }
       </Container>
     </ThemeProvider>
