@@ -39,8 +39,10 @@ const Container = styled.div`
 const AUTHORIZATION_KEY = 'CWB-28D990D2-141C-485E-9860-048D8C87B689';
 
 const App = () => {
+  const storageCity = localStorage.getItem('cityName') || '臺北市';
+
   const [currentTheme, setCurrentTheme] = useState('light');
-  const [currentCity, setCurrentCity] = useState('臺北市');
+  const [currentCity, setCurrentCity] = useState(storageCity);
   const currentLocation = useMemo(() => findLocation(currentCity), [currentCity]);
   const { cityName, locationName, sunriseCityName } = currentLocation;
   const moment = useMemo(() => getMoment(sunriseCityName), [sunriseCityName]);
